@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字順番探しゲーム</title>
+  <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --error-color: #f44336;
+            --background-color: #f0f0f0;
+            --container-bg: white;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            transition: background-color 0.3s;
+        }
+
+        .game-container {
+            background-color: var(--container-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .menu-button {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            color: #333;
+            transition: transform 0.3s;
+            z-index: 1100;
+        }
+
+        .menu-button:hover {
+            transform: scale(1.1);
+            color: var(--primary-color);
+        }
+
+        .menu-panel {
+            position: fixed;
+            right: -350px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background-color: var(--container-bg);
+            padding: 20px;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            transition: right 0.3s;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .menu-panel.open {
+            right: 0;
+        }
+
+        .menu-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .menu-icon {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .settings-panel {
+            position: fixed;
+            right: -300px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background-color: var(--container-bg);
+            padding: 20px;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            transition: right 0.3s;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-section {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+
+        .settings-section h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .settings-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .settings-option:last-child {
+            border-bottom: none;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .theme-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .theme-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .theme-option.active {
+            border-color: var(--primary-color);
+            transform: scale(1.1);
+        }
+
+        .power-up {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 5px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .power-up:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .achievement {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .achievement.locked {
+            opacity: 0.5;
+        }
+
+        .achievement-icon {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+        }
+
+        .tutorial-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .tutorial-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .stats-panel {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            padding: 5px;
+            background-color: white;
+            border-radius: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .number {
+            width: 60px;
+            height: 60px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .number.hidden {
+            visibility: hidden;
+            background-color: transparent;
+            cursor: default;
+        }
+        .number:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        .number.clicked {
+            background-color: #2196F3;
+            animation: pop 0.3s ease-out;
+        }
+        .number.wrong {
+            animation: shake 0.5s;
+            background-color: #f44336;
+        }
+        .timer {
+            font-size: 24px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+        .start-button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        .start-button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+        .difficulty-select {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .high-scores {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .high-scores h3 {
+            margin: 0 0 10px 0;
+        }
+        .high-scores ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .high-scores li {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .settings-close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #333;
+            z-index: 2100;
+        }
+  </style>
+</head>
+<body>
+    <div class="game-container">
+        <button class="menu-button" id="menuButton" aria-label="メニューを開く" aria-expanded="false" onclick="toggleMenu()">☰</button>
+        <h1>数字順番探しゲーム</h1>
+        <div class="stats-panel">
+            <h3>統計</h3>
+            <div class="stats-grid">
+                <div class="stat-item">総プレイ回数: <span id="totalGames">0</span></div>
+                <div class="stat-item">最高スコア: <span id="bestScore">-</span></div>
+                <div class="stat-item">平均時間: <span id="avgTime">-</span></div>
+                <div class="stat-item">連続正解: <span id="combo">0</span></div>
+            </div>
+        </div>
+        <select class="difficulty-select" id="difficulty">
+            <option value="easy">簡単 (4x4)</option>
+            <option value="medium">普通 (5x5)</option>
+            <option value="hard">難しい (6x6)</option>
+        </select>
+        <div class="timer">
+            <span>時間: <span id="time">0</span>秒</span>
+            <span>残り: <span id="remaining">0</span>秒</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <button class="start-button" onclick="startGame()">ゲーム開始</button>
+        <div class="grid" id="grid"></div>
+        <div class="high-scores">
+            <h3>ハイスコア</h3>
+            <ul id="highScoresList"></ul>
+        </div>
+    </div>
+
+    <div class="tutorial-overlay" id="tutorialOverlay" style="display: none;">
+        <div class="tutorial-content">
+            <h2>チュートリアル</h2>
+            <p>1. 数字を1から順番にクリックしてください</p>
+            <p>2. 制限時間内にすべての数字をクリックしてください</p>
+            <p>3. パワーアップを使用してゲームを有利に進めましょう</p>
+            <button onclick="closeTutorial()">始める</button>
+        </div>
+    </div>
+
+    <div class="menu-panel" id="menuPanel">
+        <h3>メニュー</h3>
+        <div class="menu-item" onclick="showTutorial()">
+            <span class="menu-icon">📖</span>
+            チュートリアル
+        </div>
+        <div class="menu-item" onclick="showUsage()">
+            <span class="menu-icon">❓</span>
+            使い方
+        </div>
+        <div class="menu-item" onclick="resetHighScores()">
+            <span class="menu-icon">🏆</span>
+            ハイスコアリセット
+        </div>
+        <div class="menu-item" onclick="showStats()">
+            <span class="menu-icon">📊</span>
+            統計情報
+        </div>
+        <div class="menu-item" onclick="resetStats()">
+            <span class="menu-icon">🧹</span>
+            統計をリセット
+        </div>
+        <div class="menu-item" onclick="toggleSettings()">
+            <span class="menu-icon">⚙️</span>
+            設定
+        </div>
+    </div>
+
+    <div class="settings-panel" id="settingsPanel" style="display:none; position:fixed; right:0; top:0; z-index:2000;">
+        <button class="settings-close" onclick="closeSettings()">×</button>
+        <h3>設定</h3>
+        <div class="settings-section">
+            <h4>ゲーム設定</h4>
+            <div class="settings-option">
+                <span>効果音</span>
+                <label class="switch">
+                    <input type="checkbox" id="soundEnabled" checked onchange="toggleSound()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="settings-option">
+                <span>アニメーション</span>
+                <label class="switch">
+                    <input type="checkbox" id="animationEnabled" checked onchange="toggleAnimation()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        <div class="settings-section">
+            <h4>テーマ</h4>
+            <div class="settings-option">
+                <span>ダークモード</span>
+                <label class="switch">
+                    <input type="checkbox" id="darkMode" onchange="toggleDarkMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+  <script>
+    let numbers = [];
+        let currentNumber = 1;
+        let timer;
+        let seconds = 0;
+        let gameStarted = false;
+        let timeLimit = 60;
+        let gridSize = 4;
+        let highScores = JSON.parse(localStorage.getItem('highScores')) || {
+            easy: [],
+            medium: [],
+            hard: []
+        };
+
+        let stats = JSON.parse(localStorage.getItem('gameStats')) || {
+            totalGames: 0,
+            bestScore: Infinity,
+            avgTime: 0,
+            totalTime: 0,
+            combo: 0
+        };
+
+        let achievements = JSON.parse(localStorage.getItem('achievements')) || {
+            firstWin: false,
+            speedMaster: false,
+            perfectCombo: false,
+            powerUser: false
+        };
+
+        let powerUps = {
+            hint: 3,
+            time: 1
+        };
+
+        const themes = {
+            green: {
+                primary: '#4CAF50',
+                secondary: '#2196F3',
+                error: '#f44336',
+                background: '#f0f0f0',
+                container: 'white'
+            },
+            blue: {
+                primary: '#2196F3',
+                secondary: '#4CAF50',
+                error: '#f44336',
+                background: '#e3f2fd',
+                container: 'white'
+            },
+            purple: {
+                primary: '#9C27B0',
+                secondary: '#E91E63',
+                error: '#f44336',
+                background: '#f3e5f5',
+                container: 'white'
+            }
+        };
+
+        // 効果音
+        const correctSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
+        const wrongSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
+        const completeSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
+
+        function createGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            numbers = [];
+            
+            const difficulty = document.getElementById('difficulty').value;
+            switch(difficulty) {
+                case 'easy':
+                    gridSize = 4;
+                    timeLimit = 60;
+                    break;
+                case 'medium':
+                    gridSize = 5;
+                    timeLimit = 90;
+                    break;
+                case 'hard':
+                    gridSize = 6;
+                    timeLimit = 120;
+                    break;
+            }
+
+            grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            
+            for (let i = 1; i <= gridSize * gridSize; i++) {
+                numbers.push(i);
+            }
+            shuffleArray(numbers);
+
+            numbers.forEach((num) => {
+                const button = document.createElement('button');
+                button.className = 'number';
+                button.textContent = num;
+                button.onclick = () => handleClick(num);
+                grid.appendChild(button);
+            });
+
+            document.getElementById('remaining').textContent = timeLimit;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function handleClick(num) {
+            if (!gameStarted) return;
+            
+            if (num === currentNumber) {
+                const buttons = document.getElementsByClassName('number');
+                const clickedButton = Array.from(buttons).find(button => 
+                    parseInt(button.textContent) === num
+                );
+                
+                if (clickedButton) {
+                    clickedButton.classList.add('clicked');
+                    clickedButton.classList.add('hidden');
+                    currentNumber++;
+                    correctSound.play();
+                    
+                    const progress = ((currentNumber - 1) / (gridSize * gridSize)) * 100;
+                    document.getElementById('progress').style.width = `${progress}%`;
+                    
+                    if (currentNumber > gridSize * gridSize) {
+                        endGame(true);
+                    }
+                }
+            } else {
+                const buttons = document.getElementsByClassName('number');
+                const wrongButton = Array.from(buttons).find(button => 
+                    parseInt(button.textContent) === num
+                );
+                
+                if (wrongButton) {
+                    wrongButton.classList.add('wrong');
+                    wrongSound.play();
+                    setTimeout(() => {
+                        wrongButton.classList.remove('wrong');
+                    }, 500);
+                }
+            }
+        }
+
+    function startGame() {
+            if (gameStarted) return;
+            
+            gameStarted = true;
+            currentNumber = 1;
+            seconds = 0;
+            document.getElementById('time').textContent = '0';
+            document.getElementById('progress').style.width = '0%';
+            
+            createGrid();
+            
+            // すべての数字ボタンからhiddenクラスを削除
+            const buttons = document.getElementsByClassName('number');
+            Array.from(buttons).forEach(button => {
+                button.classList.remove('hidden');
+            });
+            
+            timer = setInterval(() => {
+                seconds++;
+                const remaining = timeLimit - seconds;
+                document.getElementById('time').textContent = seconds;
+                document.getElementById('remaining').textContent = remaining;
+                
+                if (remaining <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+        }
+
+        function endGame(success) {
+            clearInterval(timer);
+            gameStarted = false;
+            
+            if (success) {
+                completeSound.play();
+                updateStats();
+                checkAchievements();
+                
+                const difficulty = document.getElementById('difficulty').value;
+                const score = {
+                    time: seconds,
+                    date: new Date().toLocaleDateString()
+                };
+                
+                highScores[difficulty].push(score);
+                highScores[difficulty].sort((a, b) => a.time - b.time);
+                highScores[difficulty] = highScores[difficulty].slice(0, 5);
+                
+                localStorage.setItem('highScores', JSON.stringify(highScores));
+                updateHighScores();
+                
+                alert(`おめでとう！クリア時間: ${seconds}秒`);
+            } else {
+                alert('時間切れです！もう一度挑戦しましょう！');
+            }
+        }
+
+        function updateHighScores() {
+            const difficulty = document.getElementById('difficulty').value;
+            const highScoresList = document.getElementById('highScoresList');
+            highScoresList.innerHTML = '';
+            
+            highScores[difficulty].forEach((score, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index + 1}. ${score.time}秒 (${score.date})`;
+                highScoresList.appendChild(li);
+            });
+        }
+
+        function toggleSettings() {
+            const settingsPanel = document.getElementById('settingsPanel');
+            if (settingsPanel.style.display === 'none' || settingsPanel.style.display === '') {
+                settingsPanel.style.display = 'block';
+                setTimeout(() => {
+                    document.addEventListener('mousedown', closeSettingsOnOutsideClick);
+                }, 0);
+            } else {
+                settingsPanel.style.display = 'none';
+                document.removeEventListener('mousedown', closeSettingsOnOutsideClick);
+            }
+            // メニューパネルを閉じる
+            document.getElementById('menuPanel').classList.remove('open');
+        }
+
+        function closeSettings() {
+            const settingsPanel = document.getElementById('settingsPanel');
+            settingsPanel.style.display = 'none';
+            document.removeEventListener('mousedown', closeSettingsOnOutsideClick);
+        }
+
+        function closeSettingsOnOutsideClick(e) {
+            const settingsPanel = document.getElementById('settingsPanel');
+            if (settingsPanel.style.display === 'block' && !settingsPanel.contains(e.target)) {
+                closeSettings();
+            }
+        }
+
+        function toggleSound() {
+            const soundEnabled = document.getElementById('soundEnabled').checked;
+            localStorage.setItem('soundEnabled', soundEnabled);
+        }
+
+        function toggleAnimation() {
+            const animationEnabled = document.getElementById('animationEnabled').checked;
+            localStorage.setItem('animationEnabled', animationEnabled);
+        }
+
+        function toggleDarkMode() {
+            const darkMode = document.getElementById('darkMode').checked;
+            if (darkMode) {
+                document.documentElement.style.setProperty('--background-color', '#1a1a1a');
+                document.documentElement.style.setProperty('--container-bg', '#2d2d2d');
+                document.documentElement.style.setProperty('--primary-color', '#4CAF50');
+            } else {
+                document.documentElement.style.setProperty('--background-color', '#f0f0f0');
+                document.documentElement.style.setProperty('--container-bg', 'white');
+                document.documentElement.style.setProperty('--primary-color', '#4CAF50');
+            }
+            localStorage.setItem('darkMode', darkMode);
+        }
+
+        function loadSettings() {
+            const soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+            const animationEnabled = localStorage.getItem('animationEnabled') !== 'false';
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            document.getElementById('soundEnabled').checked = soundEnabled;
+            document.getElementById('animationEnabled').checked = animationEnabled;
+            document.getElementById('darkMode').checked = darkMode;
+            if (darkMode) {
+                toggleDarkMode();
+            }
+        }
+        loadSettings();
+
+        function changeTheme(theme) {
+            const root = document.documentElement;
+            const themeColors = themes[theme];
+            
+            root.style.setProperty('--primary-color', themeColors.primary);
+            root.style.setProperty('--secondary-color', themeColors.secondary);
+            root.style.setProperty('--error-color', themeColors.error);
+            root.style.setProperty('--background-color', themeColors.background);
+            root.style.setProperty('--container-bg', themeColors.container);
+
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function usePowerUp(type) {
+            if (powerUps[type] > 0) {
+                powerUps[type]--;
+                updatePowerUps();
+                
+                switch(type) {
+                    case 'hint':
+                        highlightNextNumber();
+                        break;
+                    case 'time':
+                        timeLimit += 30;
+                        document.getElementById('remaining').textContent = timeLimit - seconds;
+                        break;
+                }
+            }
+        }
+
+        function highlightNextNumber() {
+            const buttons = document.getElementsByClassName('number');
+            buttons[currentNumber - 1].style.animation = 'pulse 1s infinite';
+            setTimeout(() => {
+                buttons[currentNumber - 1].style.animation = '';
+            }, 3000);
+        }
+
+        function updateStats() {
+            stats.totalGames++;
+            if (seconds < stats.bestScore) {
+                stats.bestScore = seconds;
+            }
+            stats.totalTime += seconds;
+            stats.avgTime = Math.round(stats.totalTime / stats.totalGames);
+            
+            document.getElementById('totalGames').textContent = stats.totalGames;
+            document.getElementById('bestScore').textContent = stats.bestScore === Infinity ? '-' : stats.bestScore;
+            document.getElementById('avgTime').textContent = stats.avgTime;
+            
+            localStorage.setItem('gameStats', JSON.stringify(stats));
+        }
+
+        function checkAchievements() {
+            if (!achievements.firstWin) {
+                achievements.firstWin = true;
+                unlockAchievement('初勝利！');
+            }
+            
+            if (seconds < 30 && !achievements.speedMaster) {
+                achievements.speedMaster = true;
+                unlockAchievement('スピードマスター！');
+            }
+            
+            if (stats.combo >= 10 && !achievements.perfectCombo) {
+                achievements.perfectCombo = true;
+                unlockAchievement('コンボマスター！');
+            }
+            
+            localStorage.setItem('achievements', JSON.stringify(achievements));
+        }
+
+        function unlockAchievement(title) {
+            const notification = document.createElement('div');
+            notification.className = 'achievement-notification';
+            notification.textContent = `🏆 アチーブメント解除: ${title}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function showTutorial() {
+            document.getElementById('tutorialOverlay').style.display = 'flex';
+        }
+
+        function closeTutorial() {
+            document.getElementById('tutorialOverlay').style.display = 'none';
+        }
+
+        // 既存の関数を拡張
+        function updatePowerUps() {
+            const hintPowerUp = document.getElementById('hintPowerUp');
+            const timePowerUp = document.getElementById('timePowerUp');
+            
+            hintPowerUp.textContent = `ヒント (残り${powerUps.hint}回)`;
+            timePowerUp.textContent = `時間追加 (残り${powerUps.time}回)`;
+            
+            hintPowerUp.disabled = powerUps.hint === 0;
+            timePowerUp.disabled = powerUps.time === 0;
+        }
+
+        function toggleMenu() {
+            const menuPanel = document.getElementById('menuPanel');
+            const menuButton = document.getElementById('menuButton');
+            const isOpen = menuPanel.classList.toggle('open');
+            if (isOpen) {
+                menuButton.textContent = '×';
+                menuButton.setAttribute('aria-label', 'メニューを閉じる');
+                menuButton.setAttribute('aria-expanded', 'true');
+      } else {
+                menuButton.textContent = '☰';
+                menuButton.setAttribute('aria-label', 'メニューを開く');
+                menuButton.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        function resetHighScores() {
+            if (confirm('ハイスコアをリセットしますか？')) {
+                highScores = {
+                    easy: [],
+                    medium: [],
+                    hard: []
+                };
+                localStorage.setItem('highScores', JSON.stringify(highScores));
+                updateHighScores();
+                alert('ハイスコアをリセットしました');
+            }
+        }
+
+        function showStats() {
+            const stats = JSON.parse(localStorage.getItem('gameStats')) || {
+                totalGames: 0,
+                bestScore: Infinity,
+                avgTime: 0
+            };
+            
+            alert(`総プレイ回数: ${stats.totalGames}\n最高スコア: ${stats.bestScore === Infinity ? '-' : stats.bestScore}秒\n平均時間: ${stats.avgTime}秒`);
+        }
+
+        function resetStats() {
+            if (confirm('統計情報をリセットしますか？')) {
+                localStorage.removeItem('gameStats');
+                // 画面上の統計もリセット
+                document.getElementById('totalGames').textContent = '0';
+                document.getElementById('bestScore').textContent = '-';
+                document.getElementById('avgTime').textContent = '-';
+                document.getElementById('combo').textContent = '0';
+                alert('統計情報をリセットしました');
+            }
+        }
+
+        // メニュー外をクリックした時にメニューを閉じる
+        document.addEventListener('click', (event) => {
+            const menuPanel = document.getElementById('menuPanel');
+            const menuButton = document.getElementById('menuButton');
+            if (!menuPanel.contains(event.target) && !menuButton.contains(event.target)) {
+                if (menuPanel.classList.contains('open')) {
+                    menuPanel.classList.remove('open');
+                    menuButton.textContent = '☰';
+                    menuButton.setAttribute('aria-label', 'メニューを開く');
+                    menuButton.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+
+        // 初期化
+        updateStats();
+        showTutorial();
+
+        function showUsage() {
+            alert('【使い方】\n1. 「ゲーム開始」ボタンを押す\n2. 1から順番に数字をクリック\n3. すべて押すとクリアタイムが表示されます');
+        }
+  </script>
+</body>
+</html>
